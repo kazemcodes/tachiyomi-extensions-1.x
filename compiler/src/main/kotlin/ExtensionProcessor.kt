@@ -150,7 +150,11 @@ class ExtensionProcessor(
     val pathOf = codeGenerator::class.java
       .getDeclaredMethod("pathOf", String::class.java, String::class.java, String::class.java)
     val stubFile = pathOf.invoke(codeGenerator, "", "a", "kt") as String
-    return File(stubFile).parentFile.parent
+    return if (System.getProperty("os.name").contains("win", true)) {
+      File(stubFile).parentFile.parent.replace("\\", "/")
+    } else {
+      File(stubFile).parentFile.parent
+    }
   }
 
   // TODO: this is temporary until ksp configurations are applied per variant rather than globally
