@@ -70,12 +70,24 @@ open class RepoTask : DefaultTask() {
       }
       outStream.toString().lines()
     }
+    val appResources = ByteArrayOutputStream().use { outStream ->
+      project.exec {
+        commandLine(aapt2,
+          "dump",
+          "resources",
+          apkFile.absolutePath)
+        standardOutput = outStream
+      }
+      outStream.toString().lines()
+    }
 
     val (pkgName, vcode, vname) = PACKAGE.find(lines.first())!!.destructured
 
-    val iconPath = lines
-      .last { it.startsWith("application-icon-") }
-      .let { APPLICATION_ICON.find(it)!!.groupValues.let { it[1] } }
+    val resourceIcon = appResources.first { it.endsWith("type=PNG") && it.contains("xxxhdpi")}.let { it ->  RESOURCE_ICON.find(it)?.value }
+
+    val iconPath = lines.last { it.startsWith("application-icon-") }
+      .let { it -> APPLICATION_ICON.find(it)!!.groupValues.let { it[1] } }
+
 
     val metadata = lines
       .filter { it.startsWith("meta-data") }
@@ -88,7 +100,7 @@ open class RepoTask : DefaultTask() {
     val nsfw = metadata.first { it.name == "source.nsfw" }.value == "1"
 
     return Badging(pkgName, apkFile.name, sourceName, id, lang, vcode.toInt(), vname, description,
-      nsfw, iconPath)
+      nsfw, resourceIcon?:iconPath)
   }
 
   private fun ensureValidState(badgings: List<Badging>) {
@@ -165,6 +177,7 @@ open class RepoTask : DefaultTask() {
     val PACKAGE = Regex("^package: name='([^']+)' versionCode='([0-9]*)' versionName='([^']*)'.*$")
     val METADATA = Regex("^meta-data: name='([^']*)' value='([^']*)")
     val APPLICATION_ICON = Regex("^application-icon-\\d+:'([^']*)'$")
+    val RESOURCE_ICON = Regex("[a-zA-Z]+/[a-zA-Z]+.[a-zA-Z]+")
   }
 
   private data class Metadata(
