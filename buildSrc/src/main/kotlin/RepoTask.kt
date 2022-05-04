@@ -100,7 +100,7 @@ open class RepoTask : DefaultTask() {
     val nsfw = metadata.first { it.name == "source.nsfw" }.value == "1"
 
     return Badging(pkgName, apkFile.name, sourceName, id, lang, vcode.toInt(), vname, description,
-      nsfw, resourceIcon?:iconPath)
+      nsfw, resourceIcon ?: iconPath)
   }
 
   private fun ensureValidState(badgings: List<Badging>) {
